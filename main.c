@@ -42,27 +42,41 @@ struct memory_accessor {
 
 //Buffer to hold requests
 //LOOK methods interact with this struct
-struct buffer {
+struct request_buffer {
     
 }
 
 // Insert a new request into the buffer
+// As determined by LOOK
 void insert_request(request *r, buffer *b){
+    // If the requested sector address is greater than current header
+    // Put the request to the left
+    // Else, put the request to the right
     
+    // When inserting a new request, merge appropriatly to asc or desc
 }
 
+// Get the next request from the buffer
+// As determined by LOOK
 request* get_next_request(buffer *b){
+    // Check the current direction that the head is moving
     
+    // Get the next request and return
 }
 
+
+// Remove the provided request from the buffer
 void remove_request(request *r, buffer *b){
-    
+    //This kinda depends on implementation
+    //if we can remove by pointer or need index, etc.
 }
 
 //Define the mutexes
+//Buffer mutex for insert via philosopher, and get/remove via main
 pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER
 
 //DoWorks
+//TODO: convert to array of mutexes
 pthread_mutex_t do_work_1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t do_work_2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t do_work_3 = PTHREAD_MUTEX_INITIALIZER;
@@ -78,52 +92,46 @@ static pthread_mutex_t forks[NUM_FORKS] = {
     PTHREAD_MUTEX_INITIALIZER
 };
 
-pthread_mutex_t fork_1 = PTHREAD_MUTEX_INITIALIZER
-pthread_mutex_t fork_2 = PTHREAD_MUTEX_INITIALIZER
-pthread_mutex_t fork_3 = PTHREAD_MUTEX_INITIALIZER
-pthread_mutex_t fork_4 = PTHREAD_MUTEX_INITIALIZER
-pthread_mutex_t fork_5 = PTHREAD_MUTEX_INITIALIZER
+//pthread_mutex_t fork_1 = PTHREAD_MUTEX_INITIALIZER
+//pthread_mutex_t fork_2 = PTHREAD_MUTEX_INITIALIZER
+//pthread_mutex_t fork_3 = PTHREAD_MUTEX_INITIALIZER
+//pthread_mutex_t fork_4 = PTHREAD_MUTEX_INITIALIZER
+//pthread_mutex_t fork_5 = PTHREAD_MUTEX_INITIALIZER
 
 
 void *ps(void *param)
 {
     char phi = *(char *)param;
-    int left,right;
     int do_work_mutex_index;
     swith (phi)
     case A:
-        left = 5;
-        right = 1;
-        do_work_mutex_index = 1;
+        sector_index = 0;
+        do_work_mutex_index = 0;
         break;
     case B:
-        left = 1;
-        right = 2;
-        do_work_mutex_index = 2;
+        sector_index = 1;
+        do_work_mutex_index = 1;
         break;
     case C:
-        left = 2;
-        right = 3;
-        do_work_mutex_index = 3;
+        sector_index = 2;
+        do_work_mutex_index = 2;
         break;
     case D:
-        left = 3;
-        right = 4;
-        do_work_mutex_index = 4;
+        sector_index = 3;
+        do_work_mutex_index = 3;
         break;
     case E:
-        left = 4;
-        right = 5;
-        do_work_mutex_index = 5;
+        sector_index = 4;
+        do_work_mutex_index = 4;
         break;
     default:
         return;
     
     while(1){
         think();
-        get_forks(left, right, do_work_mutex_index);
+        get_forks(sector_index, do_work_mutex_index);
         eat();
-        put_forks(left, right);
+        put_forks(sector_index);
     }
 }
 
@@ -134,7 +142,7 @@ void think(){
     sleep(sleepTime);
 }
 
-void get_forks(int left, int right, int do_work_mutex_index){
+void get_forks(sector_index, int do_work_mutex_index){
     //Lock on buffer access
     pthread_mutex_lock(&buffer_mutex);
     
@@ -163,43 +171,7 @@ void put_forks(int left, int right){
     pthread_mutex_unlock(&forks[right]);
 }
 
-int main() {
-    
-    pthread_t A,B,C,D,E;
-    
-    pthread_creat(&A,NULL,ps,"A");
-    pthread_creat(&B,NULL,ps,"B");
-    pthread_creat(&C,NULL,ps,"C");
-    pthread_creat(&D,NULL,ps,"D");
-    pthread_creat(&E,NULL,ps,"E");
-    
-    memory_accessor memory_access = malloc(sizeof(struct memory_accessor));
-    memory_access -> current_sector_index = 0;
-    memory_access -> current_spin_direction = 1; // going up
-    
-    
-    //The LOOK algorithm for buffer management
-    while(1){
-        //Lock access to the buffer
-        //Block until access is gained
-        pthread_mutex_lock(&buffer_mutex);
-        
-        //Try to service the next request
-        //Consider current direction
-        //Check if reached turning point or end of buffer
-        
-        
-        //Check if the current request has both forks available
-        //If so, unlock the current request's philosopher's "DoWork_Mutex"
-        
-        //Lock on current request's philosopher's "DoWork_Mutex"
-        
-        //Unlock access to the buffer
-        
-    }
-    
-    return 0;
-}
+
 
 
 
@@ -430,3 +402,42 @@ double genrand_res53(void)
     return(a*67108864.0+b)*(1.0/9007199254740992.0);
 }
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
+
+
+int main() {
+    //Needs to be static/global
+    //memory_accessor memory_access = malloc(sizeof(struct memory_accessor));
+    //memory_access -> current_sector_index = 0;
+    //memory_access -> current_spin_direction = 1; // going up
+    
+    pthread_t A,B,C,D,E;
+    
+    pthread_creat(&A,NULL,ps,"A");
+    pthread_creat(&B,NULL,ps,"B");
+    pthread_creat(&C,NULL,ps,"C");
+    pthread_creat(&D,NULL,ps,"D");
+    pthread_creat(&E,NULL,ps,"E");
+    
+    
+    //The LOOK algorithm for buffer management
+    while(1){
+        //Lock access to the buffer
+        //Block until access is gained
+        pthread_mutex_lock(&buffer_mutex);
+        
+        //Try to service the next request
+        //Consider current direction
+        //Check if reached turning point or end of buffer
+        
+        
+        //Check if the current request has both forks available
+        //If so, unlock the current request's philosopher's "DoWork_Mutex"
+        
+        //Lock on current request's philosopher's "DoWork_Mutex"
+        
+        //Unlock access to the buffer
+        
+    }
+    
+    return 0;
+}
